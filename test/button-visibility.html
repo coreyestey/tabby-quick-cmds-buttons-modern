@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Quick Cmd Buttons - Visibility Test</title>
+<!-- Load the REAL plugin CSS so this test exercises production styles -->
+<link rel="stylesheet" href="../src/tabs-component.css">
+<style>
+  /* Realistic Tabby dark-theme variables so the resting button is judged
+     against the same conditions the user sees. */
+  :root {
+    --bs-body-bg: #1d1f21;
+    --bs-body-color: #e8e8e8;
+    --bs-secondary-color: #6c757d;
+    --bs-border-color: #454545;
+    --bs-danger: #dc3545;
+    --theme-bg-more: #27292c;
+    --theme-bg-more-2: #2f3236;
+    --theme-fg-more-2: #bbbbbb;
+    --theme-primary: #2a7fff;
+  }
+  body { margin: 0; padding: 20px; background: var(--bs-body-bg); }
+</style>
+</head>
+<body>
+  <div class="quick-cmd-panel">
+    <div class="quick-cmd-content quick-cmd-command-list">
+      <button class="btn btn-sm btn-secondary quick-cmd-command-button" title="deploy | Right-click to edit/delete">deploy</button>
+      <button class="btn btn-sm btn-secondary quick-cmd-command-button" title="status | Right-click to edit/delete">status</button>
+    </div>
+  </div>
+</body>
+</html>
