@@ -24,7 +24,7 @@
 .quick-cmd-content { flex:1; min-height:0; overflow-y:auto; background:var(--bs-body-bg); color:var(--bs-body-color); }
 .quick-cmd-tabs-container { display:flex; flex-direction:column; }
 .quick-cmd-command-list { display:flex; flex-wrap:wrap; gap:6px 5px; padding:7px 10px; }
-.quick-cmd-command-button { margin:0; border-color:var(--bs-border-color) !important; background:var(--theme-bg-more-2) !important; color:var(--bs-body-color) !important; box-shadow:none !important; }
+.quick-cmd-command-button { margin:0; border:1px solid var(--theme-fg-more-2, rgba(127,127,127,.6)) !important; background:var(--theme-bg-more-2, rgba(127,127,127,.12)) !important; color:var(--theme-fg-more-2, #e8e8e8) !important; box-shadow:none !important; }
 .quick-cmd-command-button:hover { border-color:var(--theme-primary) !important; background:var(--theme-bg-more) !important; color:var(--theme-primary) !important; }
 .quick-cmd-command-button:active { border-color:var(--theme-primary) !important; background:var(--theme-bg-more-2) !important; color:var(--theme-primary) !important; }
 .quick-cmd-dialog-backdrop { position:fixed; inset:0; z-index:100000; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.5); pointer-events:none; }
