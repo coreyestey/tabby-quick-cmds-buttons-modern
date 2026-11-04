@@ -6,27 +6,35 @@
 <!-- Load the REAL plugin CSS so this test exercises production styles -->
 <link rel="stylesheet" href="../src/tabs-component.css">
 <style>
-  /* Realistic Tabby dark-theme variables so the resting button is judged
-     against the same conditions the user sees. */
+  /* Mirror a real Tabby theme: it defines --theme-* variables but NOT the
+     Bootstrap --bs-* ones. This is the environment where the buttons and tab
+     headers were invisible, so the test must reproduce it (no --bs-* here). */
   :root {
-    --bs-body-bg: #1d1f21;
-    --bs-body-color: #e8e8e8;
-    --bs-secondary-color: #6c757d;
-    --bs-border-color: #454545;
-    --bs-danger: #dc3545;
+    --theme-bg: #1d1f21;
     --theme-bg-more: #27292c;
     --theme-bg-more-2: #2f3236;
+    --theme-fg: #e8e8e8;
     --theme-fg-more-2: #bbbbbb;
     --theme-primary: #2a7fff;
   }
-  body { margin: 0; padding: 20px; background: var(--bs-body-bg); }
+  body { margin: 0; padding: 20px; background: var(--theme-bg); }
 </style>
 </head>
 <body>
   <div class="quick-cmd-panel">
-    <div class="quick-cmd-content quick-cmd-command-list">
-      <button class="btn btn-sm btn-secondary quick-cmd-command-button" title="deploy | Right-click to edit/delete">deploy</button>
-      <button class="btn btn-sm btn-secondary quick-cmd-command-button" title="status | Right-click to edit/delete">status</button>
+    <div class="quick-cmd-content quick-cmd-tabs-container">
+      <div class="tabs-component">
+        <ul class="tabs-component-tabs">
+          <li class="tabs-component-tab is-active"><a class="tabs-component-tab-a">default</a></li>
+          <li class="tabs-component-tab"><a class="tabs-component-tab-a">SyncShip</a></li>
+        </ul>
+        <div class="tabs-component-panels">
+          <div class="quick-cmd-command-list">
+            <button class="btn btn-sm btn-secondary quick-cmd-command-button" title="deploy | Right-click to edit/delete">deploy</button>
+            <button class="btn btn-sm btn-secondary quick-cmd-command-button" title="status | Right-click to edit/delete">status</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </body>

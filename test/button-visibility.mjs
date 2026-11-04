@@ -29,36 +29,45 @@ const page = await browser.newPage();
 await page.goto(htmlPath);
 await page.waitForSelector('.quick-cmd-command-button');
 
+// --- Command button, at rest (no hover) ---
 const btn = page.locator('.quick-cmd-command-button').first();
-
-// Read computed styles of the button AT REST (no hover) and the panel behind it.
-const styles = await btn.evaluate(el => {
+const btnStyles = await btn.evaluate(el => {
   const cs = getComputedStyle(el);
   const panel = el.closest('.quick-cmd-panel');
   const panelBg = panel ? getComputedStyle(panel).backgroundColor : getComputedStyle(document.body).backgroundColor;
   return { border: cs.borderTopColor, text: cs.color, panelBg };
 });
+{
+  const border = parseColor(btnStyles.border);
+  const text = parseColor(btnStyles.text);
+  const panelBg = parseColor(btnStyles.panelBg);
 
-const border = parseColor(styles.border);
-const text = parseColor(styles.text);
-const panelBg = parseColor(styles.panelBg);
+  if (border && border.a > 0) pass(`button border not transparent (${btnStyles.border})`);
+  else fail(`button border is transparent at rest (${btnStyles.border})`);
 
-// 1. Border must not be fully transparent at rest (the original bug).
-if (border && border.a > 0) pass(`border not transparent (${styles.border})`);
-else fail(`border is transparent at rest (${styles.border})`);
+  if (border && panelBg && border.a > 0 && channelDistance(border, panelBg) >= MIN_DISTANCE)
+    pass(`button border distinguishable from panel (${btnStyles.border} vs ${btnStyles.panelBg})`);
+  else fail(`button border blends into panel (${btnStyles.border} vs ${btnStyles.panelBg})`);
 
-// 2. Border must be distinguishable from the panel background.
-if (border && panelBg && border.a > 0 && channelDistance(border, panelBg) >= MIN_DISTANCE) {
-  pass(`border distinguishable from panel (${styles.border} vs ${styles.panelBg})`);
-} else {
-  fail(`border blends into panel (${styles.border} vs ${styles.panelBg})`);
+  if (text && panelBg && channelDistance(text, panelBg) >= MIN_DISTANCE)
+    pass(`button label readable against panel (${btnStyles.text} vs ${btnStyles.panelBg})`);
+  else fail(`button label blends into panel (${btnStyles.text} vs ${btnStyles.panelBg})`);
 }
 
-// 3. Label text must be readable against the panel background.
-if (text && panelBg && channelDistance(text, panelBg) >= MIN_DISTANCE) {
-  pass(`label readable against panel (${styles.text} vs ${styles.panelBg})`);
-} else {
-  fail(`label blends into panel (${styles.text} vs ${styles.panelBg})`);
+// --- Inactive tab header, at rest (not active, not hovered) ---
+const tab = page.locator('.tabs-component-tab:not(.is-active) .tabs-component-tab-a').first();
+const tabStyles = await tab.evaluate(el => {
+  const cs = getComputedStyle(el);
+  const bar = el.closest('.tabs-component-tabs');
+  const barBg = bar ? getComputedStyle(bar).backgroundColor : getComputedStyle(document.body).backgroundColor;
+  return { text: cs.color, barBg };
+});
+{
+  const text = parseColor(tabStyles.text);
+  const barBg = parseColor(tabStyles.barBg);
+  if (text && barBg && channelDistance(text, barBg) >= MIN_DISTANCE)
+    pass(`inactive tab header readable against tab bar (${tabStyles.text} vs ${tabStyles.barBg})`);
+  else fail(`inactive tab header blends into tab bar (${tabStyles.text} vs ${tabStyles.barBg})`);
 }
 
 await browser.close();
