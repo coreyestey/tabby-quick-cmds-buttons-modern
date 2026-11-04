@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Quick Cmd Buttons - Visibility Test</title>
+<!-- Load the REAL plugin CSS so this test exercises production styles -->
+<link rel="stylesheet" href="../src/tabs-component.css">
+<style>
+  /* Reproduce the real failing theme: Tabby defines its own --theme-* colors,
+     but ALSO defines the Bootstrap --bs-* variables to flat black. Styles that
+     trusted --bs-* therefore rendered black-on-black. The plugin CSS must stay
+     legible by using --theme-* only, so this fixture sets --bs-* to black on
+     purpose and the test asserts text/buttons are still visible. */
+  :root {
+    --bs-body-bg: #000000;
+    --bs-body-color: #000000;
+    --bs-secondary-color: #000000;
+    --bs-border-color: #000000;
+
+    --theme-bg: #000000;
+    --theme-bg-more: #27292c;
+    --theme-bg-more-2: #2f3236;
+    --theme-fg: #e8e8e8;
+    --theme-fg-more-2: #808080;
+    --theme-primary: #2a7fff;
+  }
+  body { margin: 0; padding: 20px; background: var(--theme-bg); }
+</style>
+</head>
+<body>
+  <div class="quick-cmd-panel">
+    <div class="quick-cmd-content quick-cmd-tabs-container">
+      <div class="tabs-component">
+        <ul class="tabs-component-tabs">
+          <li class="tabs-component-tab is-active"><a class="tabs-component-tab-a">default</a></li>
+          <li class="tabs-component-tab"><a class="tabs-component-tab-a">SyncShip</a></li>
+        </ul>
+        <div class="tabs-component-panels">
+          <div class="quick-cmd-command-list">
+            <button class="btn btn-sm btn-secondary quick-cmd-command-button" title="deploy | Right-click to edit/delete">deploy</button>
+            <button class="btn btn-sm btn-secondary quick-cmd-command-button" title="status | Right-click to edit/delete">status</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
