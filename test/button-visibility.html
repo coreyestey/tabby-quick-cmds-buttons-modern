@@ -6,15 +6,22 @@
 <!-- Load the REAL plugin CSS so this test exercises production styles -->
 <link rel="stylesheet" href="../src/tabs-component.css">
 <style>
-  /* Mirror a real Tabby theme: it defines --theme-* variables but NOT the
-     Bootstrap --bs-* ones. This is the environment where the buttons and tab
-     headers were invisible, so the test must reproduce it (no --bs-* here). */
+  /* Reproduce the real failing theme: Tabby defines its own --theme-* colors,
+     but ALSO defines the Bootstrap --bs-* variables to flat black. Styles that
+     trusted --bs-* therefore rendered black-on-black. The plugin CSS must stay
+     legible by using --theme-* only, so this fixture sets --bs-* to black on
+     purpose and the test asserts text/buttons are still visible. */
   :root {
-    --theme-bg: #1d1f21;
+    --bs-body-bg: #000000;
+    --bs-body-color: #000000;
+    --bs-secondary-color: #000000;
+    --bs-border-color: #000000;
+
+    --theme-bg: #000000;
     --theme-bg-more: #27292c;
     --theme-bg-more-2: #2f3236;
     --theme-fg: #e8e8e8;
-    --theme-fg-more-2: #bbbbbb;
+    --theme-fg-more-2: #808080;
     --theme-primary: #2a7fff;
   }
   body { margin: 0; padding: 20px; background: var(--theme-bg); }
