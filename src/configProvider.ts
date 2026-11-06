@@ -8,7 +8,7 @@ export class QuickCmdBtnConfigProvider extends ConfigProvider {
             useSystemTheme: false,
         },
         hotkeys: {
-            'toggle-tabs': [],
+            'toggle-quick-cmd-btn': [],
         },
     }
 }

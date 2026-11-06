@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core'
-import { ConfigService } from 'tabby-core'
+import { ConfigService, HotkeysService } from 'tabby-core'
 import { createApp } from 'vue'
 // import { ref } from 'vue'
 import {Tabs, Tab} from 'vue3-tabs-component';
@@ -11,6 +11,7 @@ export class CmdBtnService {
     private app: any = null
     private div: HTMLElement | null = null
     private subscriptions: any[] = []
+    private visible = true
 
     /**
      * Quick Commands live in the separate tabby-quick-cmds plugin under the
@@ -34,6 +35,7 @@ export class CmdBtnService {
 
     constructor (
         public config: ConfigService,
+        private hotkeys: HotkeysService,
     ) {
         // Clean up any previous instance
         this.cleanup()
@@ -153,6 +155,13 @@ export class CmdBtnService {
             </div>
         `
         this.div = div
+
+        // Toggle the panel with the configurable "Show/hide QuickCmdBtn" hotkey.
+        this.subscriptions.push(this.hotkeys.hotkey$.subscribe(id => {
+            if (id === 'toggle-quick-cmd-btn') {
+                this.toggle()
+            }
+        }))
 
         let thisVar = this
 
@@ -377,7 +386,10 @@ export class CmdBtnService {
                     return [...thisVar.qcCmds]
                 },
                 closePanel() {
-                    thisVar.cleanup()
+                    // Hide rather than destroy: the service is built once at
+                    // startup, so destroying would make the panel unrecoverable
+                    // until Tabby restarts. The toggle hotkey/menu brings it back.
+                    thisVar.hide()
                 },
                 startResize(e) {
                     e.preventDefault()
@@ -517,6 +529,28 @@ export class CmdBtnService {
         const index = this.tabs.indexOf(tab)
         if (index >= 0) {
             this.tabs.splice(index, 1)
+        }
+    }
+
+    show () {
+        if (this.div) {
+            this.div.style.display = ''
+        }
+        this.visible = true
+    }
+
+    hide () {
+        if (this.div) {
+            this.div.style.display = 'none'
+        }
+        this.visible = false
+    }
+
+    toggle () {
+        if (this.visible) {
+            this.hide()
+        } else {
+            this.show()
         }
     }
 

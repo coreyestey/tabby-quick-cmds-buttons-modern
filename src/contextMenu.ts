@@ -13,12 +13,12 @@ export class QuickCmdBtnContextMenuProvider extends TerminalContextMenuItemProvi
         super()
     }
 
-    async getItems (tab: BaseTerminalTabComponent): Promise<MenuItemOptions[]> {
+    async getItems (_tab: BaseTerminalTabComponent): Promise<MenuItemOptions[]> {
         return [
             {
-                label: 'Toggle QuickCmdBtn',
+                label: 'Toggle Quick Commands panel',
                 click: () => {
-                    console.log(this.quickCmdBtn, tab)
+                    this.quickCmdBtn.toggle()
                 },
             },
         ]
