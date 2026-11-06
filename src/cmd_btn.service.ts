@@ -39,18 +39,10 @@ export class CmdBtnService {
     ) {
         // Clean up any previous instance
         this.cleanup()
-        console.log('✓ CmdBtnService loaded with quick-add feature')
-
-        // Unique marker to verify THIS version is loaded
-        const markerEl = document.createElement('div')
-        markerEl.id = 'PLUGIN_VERSION_MARKER_QUICK_COMMAND_PARAMETERS'
-        markerEl.style.display = 'none'
-        document.body.appendChild(markerEl)
 
         const div = document.createElement('div')
         div.className = 'quick-cmd-panel'
         div.setAttribute("id", 'app-parent')
-        console.log('✓ Created #app-parent div')
 
         const appDiv = document.createElement('div')
         appDiv.setAttribute("id", 'app')
@@ -166,17 +158,9 @@ export class CmdBtnService {
 
         let thisVar = this
 
-        console.log('✓ templateHTML defined, length:', templateHTML.length)
-        console.log('✓ First 200 chars:', templateHTML.substring(0, 200))
-        console.log('✓ #app div found:', !!document.getElementById('app'))
-        console.log('✓ About to create Vue app...')
-
         const appConfig = {
             template: templateHTML,
             mounted: function(){
-                console.log('✓ Vue app mounted successfully!')
-                console.log('✓ Vue component this:', !!this)
-                console.log('✓ template rendered, tabToCmds:', Object.keys(this.tabToCmds).length)
                 if (this.$refs.cmdTabs && Object.keys(this.tabToCmds).length > 0) {
                     this.$refs.cmdTabs.selectTab("#"+Object.keys(this.tabToCmds)[0])
                 }
@@ -359,9 +343,6 @@ export class CmdBtnService {
                     }
                     this.showContextMenu = false
                 },
-                showSettings() {
-                    console.log('Settings clicked')
-                },
                 updateCmds() {
                     const tabToCmds: { [key: string]: any } = {};
                     for (let element of thisVar.qcCmds) {
@@ -426,26 +407,6 @@ export class CmdBtnService {
         this.app.component('tabs', Tabs)
         .component('tab', Tab)
         .mount('#app');
-
-        console.log('✓ Vue app.mount() called')
-        setTimeout(() => {
-            const headerEl = document.getElementById('app-parent-header')
-            const finalAppEl = document.getElementById('app')
-            const finalAppParentEl = document.getElementById('app-parent')
-            console.log('✓ After Vue mount:')
-            console.log('#app element:', !!finalAppEl)
-            if (finalAppEl) console.log('#app innerHTML length:', finalAppEl.innerHTML.length)
-            console.log('#app-parent-header element:', !!headerEl)
-            console.log('#app-parent element:', !!finalAppParentEl)
-            if (finalAppParentEl) {
-                const style = window.getComputedStyle(finalAppParentEl)
-                console.log('display:', style.display)
-                console.log('visibility:', style.visibility)
-                console.log('opacity:', style.opacity)
-                console.log('width:', style.width)
-                console.log('height:', style.height)
-            }
-        }, 500)
 
         dragElement(document.getElementById("app-parent"));
 

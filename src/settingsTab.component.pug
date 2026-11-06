@@ -1,12 +1,12 @@
-h3 QuickCmdBtn
+h3 Quick Commands Buttons
 
 .form-line
     .header
         .title Disable tabs
-        .description Disable tabs for buttons
+        .description Show commands as a single flat list instead of grouping them into tabs
 
     toggle.ml-1(
-        title="Disable tabs for buttons",
+        title="Show commands as a single flat list instead of grouping them into tabs",
         [(ngModel)]='config.store.quickCmdBtnPlugin.disableTabs',
         (ngModelChange)='config.save()'
     )
@@ -14,10 +14,10 @@ h3 QuickCmdBtn
 .form-line
     .header
         .title Use system theme
-        .description Use system theme
+        .description Follow Tabby's active theme for the panel colors
 
     toggle.ml-1(
-        title="Use system theme",
+        title="Follow Tabby's active theme for the panel colors",
         [(ngModel)]='config.store.quickCmdBtnPlugin.useSystemTheme',
         (ngModelChange)='config.save()'
     )
