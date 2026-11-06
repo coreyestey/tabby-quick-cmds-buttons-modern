@@ -93,7 +93,7 @@ export class CmdBtnService {
 
                 <!-- Create/Edit Command Dialog -->
                 <div v-if="showDialog" class="quick-cmd-dialog-backdrop">
-                    <div class="quick-cmd-dialog" @click.stop @mousedown.stop @keydown.stop @keyup.stop @keypress.stop>
+                    <div class="quick-cmd-dialog" @click.stop @mousedown.stop @keydown.stop @keyup.stop @keypress.stop @keydown.esc="closeDialog">
                         <h3 class="quick-cmd-dialog-title">{{ editingExistingCommand ? 'Edit Command' : 'Create New Command' }}</h3>
                         <div class="quick-cmd-form-group">
                             <label class="quick-cmd-form-label">Command Name</label>
@@ -126,7 +126,7 @@ export class CmdBtnService {
 
                 <!-- Quick Cmds-compatible Parameter Dialog -->
                 <div v-if="showParameterDialog" class="quick-cmd-dialog-backdrop">
-                    <div class="quick-cmd-dialog quick-cmd-parameter-dialog" @click.stop @mousedown.stop @keydown.stop @keyup.stop @keypress.stop>
+                    <div class="quick-cmd-dialog quick-cmd-parameter-dialog" @click.stop @mousedown.stop @keydown.stop @keyup.stop @keypress.stop @keydown.esc="cancelParameterDialog">
                         <h3 class="quick-cmd-dialog-title">Command Parameters</h3>
                         <p class="quick-cmd-dialog-description">Enter values for the variables used by this Quick Command.</p>
                         <div v-for="parameter in parameterFields" :key="parameter.name" class="quick-cmd-form-group">
