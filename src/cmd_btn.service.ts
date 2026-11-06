@@ -155,6 +155,7 @@ export class CmdBtnService {
             </div>
         `
         this.div = div
+        this.restoreGeometry()
 
         // Toggle the panel with the configurable "Show/hide QuickCmdBtn" hotkey.
         this.subscriptions.push(this.hotkeys.hotkey$.subscribe(id => {
@@ -410,6 +411,7 @@ export class CmdBtnService {
                     const onMouseUp = () => {
                         document.removeEventListener('mousemove', onMouseMove)
                         document.removeEventListener('mouseup', onMouseUp)
+                        thisVar.saveGeometry()
                     }
 
                     document.addEventListener('mousemove', onMouseMove)
@@ -488,6 +490,7 @@ export class CmdBtnService {
             function closeDragElement() {
                 document.onmouseup = null;
                 document.onmousemove = null;
+                thisVar.saveGeometry();
             }
         }
     }
@@ -552,6 +555,41 @@ export class CmdBtnService {
         } else {
             this.show()
         }
+    }
+
+    private get pluginStore (): any {
+        if (!this.config.store || !this.config.store.quickCmdBtnPlugin) {
+            return null
+        }
+        return this.config.store.quickCmdBtnPlugin
+    }
+
+    private saveGeometry () {
+        const store = this.pluginStore
+        if (!this.div || !store) {
+            return
+        }
+        store.panel = {
+            top: this.div.offsetTop,
+            left: this.div.offsetLeft,
+            width: this.div.offsetWidth,
+            height: this.div.offsetHeight,
+        }
+        this.config.save()
+    }
+
+    private restoreGeometry () {
+        const store = this.pluginStore
+        const panel = store && store.panel
+        if (!this.div || !panel) {
+            return
+        }
+        this.div.style.top = panel.top + 'px'
+        this.div.style.left = panel.left + 'px'
+        this.div.style.right = 'auto'
+        this.div.style.width = panel.width + 'px'
+        this.div.style.height = panel.height + 'px'
+        this.div.style.maxHeight = panel.height + 'px'
     }
 
     private cleanup() {

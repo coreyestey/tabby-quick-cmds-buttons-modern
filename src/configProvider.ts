@@ -6,6 +6,7 @@ export class QuickCmdBtnConfigProvider extends ConfigProvider {
         quickCmdBtnPlugin: {
             disableTabs: false,
             useSystemTheme: false,
+            panel: null,
         },
         hotkeys: {
             'toggle-quick-cmd-btn': [],
