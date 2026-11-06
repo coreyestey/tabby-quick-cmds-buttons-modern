@@ -12,6 +12,26 @@ export class CmdBtnService {
     private div: HTMLElement | null = null
     private subscriptions: any[] = []
 
+    /**
+     * Quick Commands live in the separate tabby-quick-cmds plugin under the
+     * `qc` config namespace, which may not exist if that plugin is not
+     * installed or has never created a command. Always read through this
+     * guard so a missing namespace cannot throw.
+     */
+    public get qcCmds (): any[] {
+        return this.config.store?.qc?.cmds ?? []
+    }
+
+    private ensureQcCmds (): any[] {
+        if (!this.config.store.qc) {
+            this.config.store.qc = { cmds: [] }
+        }
+        if (!this.config.store.qc.cmds) {
+            this.config.store.qc.cmds = []
+        }
+        return this.config.store.qc.cmds
+    }
+
     constructor (
         public config: ConfigService,
     ) {
@@ -279,13 +299,11 @@ export class CmdBtnService {
                         alert('Name and command text are required')
                         return
                     }
-                    if (!thisVar.config.store.qc.cmds) {
-                        thisVar.config.store.qc.cmds = []
-                    }
-                    const existingIndex = thisVar.config.store.qc.cmds.findIndex(c => c.name === this.newCmd.name)
+                    const cmds = thisVar.ensureQcCmds()
+                    const existingIndex = cmds.findIndex(c => c.name === this.newCmd.name)
                     if (existingIndex >= 0) {
-                        thisVar.config.store.qc.cmds[existingIndex] = {
-                            ...thisVar.config.store.qc.cmds[existingIndex],
+                        cmds[existingIndex] = {
+                            ...cmds[existingIndex],
                             name: this.newCmd.name,
                             text: this.newCmd.text,
                             description: this.newCmd.description || '',
@@ -293,7 +311,7 @@ export class CmdBtnService {
                             appendCR: this.newCmd.appendCR,
                         }
                     } else {
-                        thisVar.config.store.qc.cmds.push({
+                        cmds.push({
                             name: this.newCmd.name,
                             text: this.newCmd.text,
                             description: this.newCmd.description || '',
@@ -319,9 +337,10 @@ export class CmdBtnService {
                 },
                 deleteCommand(cmd) {
                     if (confirm('Delete command: ' + cmd.name + '?')) {
-                        const index = thisVar.config.store.qc.cmds.findIndex(c => c.name === cmd.name)
+                        const cmds = thisVar.qcCmds
+                        const index = cmds.indexOf(cmd) >= 0 ? cmds.indexOf(cmd) : cmds.findIndex(c => c.name === cmd.name)
                         if (index >= 0) {
-                            thisVar.config.store.qc.cmds.splice(index, 1)
+                            cmds.splice(index, 1)
                             thisVar.config.save()
                         }
                     }
@@ -332,13 +351,11 @@ export class CmdBtnService {
                 },
                 updateCmds() {
                     const tabToCmds: { [key: string]: any } = {};
-                    if(thisVar.config.store){
-                        for (let element of thisVar.config.store.qc.cmds) {
-                            if (!tabToCmds.hasOwnProperty(element.group)) {
-                                tabToCmds[element.group] = []
-                            }
-                            tabToCmds[element.group].push(element)
+                    for (let element of thisVar.qcCmds) {
+                        if (!tabToCmds.hasOwnProperty(element.group)) {
+                            tabToCmds[element.group] = []
                         }
+                        tabToCmds[element.group].push(element)
                     }
                     return tabToCmds
                 },
@@ -357,13 +374,7 @@ export class CmdBtnService {
                     return isUseSystemTheme
                 },
                 getCmds() {
-                    let cmds = []
-                    if(thisVar.config.store){
-                        for (let element of thisVar.config.store.qc.cmds) {
-                            cmds.push(element)
-                        }
-                    }
-                    return cmds
+                    return [...thisVar.qcCmds]
                 },
                 closePanel() {
                     thisVar.cleanup()
@@ -500,6 +511,13 @@ export class CmdBtnService {
     
     addTab (tab: any) {
         this.tabs.push(tab)
+    }
+
+    removeTab (tab: any) {
+        const index = this.tabs.indexOf(tab)
+        if (index >= 0) {
+            this.tabs.splice(index, 1)
+        }
     }
 
     private cleanup() {
