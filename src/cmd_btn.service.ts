@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core'
-import { ConfigService } from 'tabby-core'
+import { ConfigService, HotkeysService } from 'tabby-core'
 import { createApp } from 'vue'
 // import { ref } from 'vue'
 import {Tabs, Tab} from 'vue3-tabs-component';
@@ -11,24 +11,38 @@ export class CmdBtnService {
     private app: any = null
     private div: HTMLElement | null = null
     private subscriptions: any[] = []
+    private visible = true
+
+    /**
+     * Quick Commands live in the separate tabby-quick-cmds plugin under the
+     * `qc` config namespace, which may not exist if that plugin is not
+     * installed or has never created a command. Always read through this
+     * guard so a missing namespace cannot throw.
+     */
+    public get qcCmds (): any[] {
+        return this.config.store?.qc?.cmds ?? []
+    }
+
+    private ensureQcCmds (): any[] {
+        if (!this.config.store.qc) {
+            this.config.store.qc = { cmds: [] }
+        }
+        if (!this.config.store.qc.cmds) {
+            this.config.store.qc.cmds = []
+        }
+        return this.config.store.qc.cmds
+    }
 
     constructor (
         public config: ConfigService,
+        private hotkeys: HotkeysService,
     ) {
         // Clean up any previous instance
         this.cleanup()
-        console.log('✓ CmdBtnService loaded with quick-add feature')
-
-        // Unique marker to verify THIS version is loaded
-        const markerEl = document.createElement('div')
-        markerEl.id = 'PLUGIN_VERSION_MARKER_QUICK_COMMAND_PARAMETERS'
-        markerEl.style.display = 'none'
-        document.body.appendChild(markerEl)
 
         const div = document.createElement('div')
         div.className = 'quick-cmd-panel'
         div.setAttribute("id", 'app-parent')
-        console.log('✓ Created #app-parent div')
 
         const appDiv = document.createElement('div')
         appDiv.setAttribute("id", 'app')
@@ -53,7 +67,7 @@ export class CmdBtnService {
                 </div>
 
                 <div v-show="isTabVisible===false && !minimized" :class="{'use-fixed-theme': !isUseSystemTheme}" class="quick-cmd-content quick-cmd-command-list">
-                    <button @click="sendCmd(cmd)" @contextmenu="openCmdContextMenu($event, cmd)" v-for="cmd in cmds" :key="cmd.name" :title="(cmd.description || cmd.text || '') + ' | Right-click to edit/delete'" class="btn btn-sm btn-secondary quick-cmd-command-button">
+                    <button @click="sendCmd(cmd)" @contextmenu="openCmdContextMenu($event, cmd)" v-for="(cmd, cmdIndex) in cmds" :key="cmdIndex" :title="(cmd.description || cmd.text || '') + ' | Right-click to edit/delete'" class="btn btn-sm btn-secondary quick-cmd-command-button">
                         {{ cmd.name }}
                     </button>
                 </div>
@@ -61,7 +75,7 @@ export class CmdBtnService {
                     <tabs ref="cmdTabs" :options="{ useUrlFragment: false }" >
                         <tab v-bind:name="cmdGroup" v-for="(cmds, cmdGroup) in tabToCmds" :key="cmdGroup">
                             <div class="quick-cmd-command-list">
-                                <button @click="sendCmd(cmd)" @contextmenu="openCmdContextMenu($event, cmd)" v-for="cmd in cmds" :key="cmd.name" :title="(cmd.description || cmd.text || '') + ' | Right-click to edit/delete'" class="btn btn-sm btn-secondary quick-cmd-command-button">
+                                <button @click="sendCmd(cmd)" @contextmenu="openCmdContextMenu($event, cmd)" v-for="(cmd, cmdIndex) in cmds" :key="cmdGroup + '-' + cmdIndex" :title="(cmd.description || cmd.text || '') + ' | Right-click to edit/delete'" class="btn btn-sm btn-secondary quick-cmd-command-button">
                                     {{ cmd.name }}
                                 </button>
                             </div>
@@ -71,7 +85,7 @@ export class CmdBtnService {
 
                 <!-- Create/Edit Command Dialog -->
                 <div v-if="showDialog" class="quick-cmd-dialog-backdrop">
-                    <div class="quick-cmd-dialog" @click.stop @mousedown.stop @keydown.stop @keyup.stop @keypress.stop>
+                    <div class="quick-cmd-dialog" @click.stop @mousedown.stop @keydown.stop @keyup.stop @keypress.stop @keydown.esc="closeDialog">
                         <h3 class="quick-cmd-dialog-title">{{ editingExistingCommand ? 'Edit Command' : 'Create New Command' }}</h3>
                         <div class="quick-cmd-form-group">
                             <label class="quick-cmd-form-label">Command Name</label>
@@ -104,7 +118,7 @@ export class CmdBtnService {
 
                 <!-- Quick Cmds-compatible Parameter Dialog -->
                 <div v-if="showParameterDialog" class="quick-cmd-dialog-backdrop">
-                    <div class="quick-cmd-dialog quick-cmd-parameter-dialog" @click.stop @mousedown.stop @keydown.stop @keyup.stop @keypress.stop>
+                    <div class="quick-cmd-dialog quick-cmd-parameter-dialog" @click.stop @mousedown.stop @keydown.stop @keyup.stop @keypress.stop @keydown.esc="cancelParameterDialog">
                         <h3 class="quick-cmd-dialog-title">Command Parameters</h3>
                         <p class="quick-cmd-dialog-description">Enter values for the variables used by this Quick Command.</p>
                         <div v-for="parameter in parameterFields" :key="parameter.name" class="quick-cmd-form-group">
@@ -133,20 +147,20 @@ export class CmdBtnService {
             </div>
         `
         this.div = div
+        this.restoreGeometry()
+
+        // Toggle the panel with the configurable "Show/hide QuickCmdBtn" hotkey.
+        this.subscriptions.push(this.hotkeys.hotkey$.subscribe(id => {
+            if (id === 'toggle-quick-cmd-btn') {
+                this.toggle()
+            }
+        }))
 
         let thisVar = this
-
-        console.log('✓ templateHTML defined, length:', templateHTML.length)
-        console.log('✓ First 200 chars:', templateHTML.substring(0, 200))
-        console.log('✓ #app div found:', !!document.getElementById('app'))
-        console.log('✓ About to create Vue app...')
 
         const appConfig = {
             template: templateHTML,
             mounted: function(){
-                console.log('✓ Vue app mounted successfully!')
-                console.log('✓ Vue component this:', !!this)
-                console.log('✓ template rendered, tabToCmds:', Object.keys(this.tabToCmds).length)
                 if (this.$refs.cmdTabs && Object.keys(this.tabToCmds).length > 0) {
                     this.$refs.cmdTabs.selectTab("#"+Object.keys(this.tabToCmds)[0])
                 }
@@ -178,6 +192,7 @@ export class CmdBtnService {
                     cmds: this.getCmds(),
                     showDialog: false,
                     editingExistingCommand: false,
+                    editingCmdRef: null,
                     showParameterDialog: false,
                     parameterFields: [],
                     pendingCmd: null,
@@ -267,39 +282,38 @@ export class CmdBtnService {
                         appendCR: true,
                     }
                     this.editingExistingCommand = false
+                    this.editingCmdRef = null
                     this.showDialog = true
                     this.showContextMenu = false
                 },
                 closeDialog() {
                     this.showDialog = false
                     this.editingExistingCommand = false
+                    this.editingCmdRef = null
                 },
                 saveCommand() {
                     if (!this.newCmd.name || !this.newCmd.text) {
                         alert('Name and command text are required')
                         return
                     }
-                    if (!thisVar.config.store.qc.cmds) {
-                        thisVar.config.store.qc.cmds = []
+                    const cmds = thisVar.ensureQcCmds()
+                    const values = {
+                        name: this.newCmd.name,
+                        text: this.newCmd.text,
+                        description: this.newCmd.description || '',
+                        group: this.newCmd.group || 'default',
+                        appendCR: this.newCmd.appendCR,
                     }
-                    const existingIndex = thisVar.config.store.qc.cmds.findIndex(c => c.name === this.newCmd.name)
-                    if (existingIndex >= 0) {
-                        thisVar.config.store.qc.cmds[existingIndex] = {
-                            ...thisVar.config.store.qc.cmds[existingIndex],
-                            name: this.newCmd.name,
-                            text: this.newCmd.text,
-                            description: this.newCmd.description || '',
-                            group: this.newCmd.group || 'default',
-                            appendCR: this.newCmd.appendCR,
-                        }
+                    // When editing, update the exact command object being edited
+                    // (tracked by reference) so renaming it works and commands
+                    // that share a name are not confused for one another.
+                    const editIndex = this.editingExistingCommand && this.editingCmdRef
+                        ? cmds.indexOf(this.editingCmdRef)
+                        : -1
+                    if (editIndex >= 0) {
+                        cmds[editIndex] = { ...cmds[editIndex], ...values }
                     } else {
-                        thisVar.config.store.qc.cmds.push({
-                            name: this.newCmd.name,
-                            text: this.newCmd.text,
-                            description: this.newCmd.description || '',
-                            group: this.newCmd.group || 'default',
-                            appendCR: this.newCmd.appendCR,
-                        })
+                        cmds.push(values)
                     }
                     thisVar.config.save()
                     this.closeDialog()
@@ -314,31 +328,28 @@ export class CmdBtnService {
                 editCommand(cmd) {
                     this.newCmd = { ...cmd }
                     this.editingExistingCommand = true
+                    this.editingCmdRef = cmd
                     this.showContextMenu = false
                     this.showDialog = true
                 },
                 deleteCommand(cmd) {
                     if (confirm('Delete command: ' + cmd.name + '?')) {
-                        const index = thisVar.config.store.qc.cmds.findIndex(c => c.name === cmd.name)
+                        const cmds = thisVar.qcCmds
+                        const index = cmds.indexOf(cmd) >= 0 ? cmds.indexOf(cmd) : cmds.findIndex(c => c.name === cmd.name)
                         if (index >= 0) {
-                            thisVar.config.store.qc.cmds.splice(index, 1)
+                            cmds.splice(index, 1)
                             thisVar.config.save()
                         }
                     }
                     this.showContextMenu = false
                 },
-                showSettings() {
-                    console.log('Settings clicked')
-                },
                 updateCmds() {
                     const tabToCmds: { [key: string]: any } = {};
-                    if(thisVar.config.store){
-                        for (let element of thisVar.config.store.qc.cmds) {
-                            if (!tabToCmds.hasOwnProperty(element.group)) {
-                                tabToCmds[element.group] = []
-                            }
-                            tabToCmds[element.group].push(element)
+                    for (let element of thisVar.qcCmds) {
+                        if (!tabToCmds.hasOwnProperty(element.group)) {
+                            tabToCmds[element.group] = []
                         }
+                        tabToCmds[element.group].push(element)
                     }
                     return tabToCmds
                 },
@@ -357,16 +368,13 @@ export class CmdBtnService {
                     return isUseSystemTheme
                 },
                 getCmds() {
-                    let cmds = []
-                    if(thisVar.config.store){
-                        for (let element of thisVar.config.store.qc.cmds) {
-                            cmds.push(element)
-                        }
-                    }
-                    return cmds
+                    return [...thisVar.qcCmds]
                 },
                 closePanel() {
-                    thisVar.cleanup()
+                    // Hide rather than destroy: the service is built once at
+                    // startup, so destroying would make the panel unrecoverable
+                    // until Tabby restarts. The toggle hotkey/menu brings it back.
+                    thisVar.hide()
                 },
                 startResize(e) {
                     e.preventDefault()
@@ -387,6 +395,7 @@ export class CmdBtnService {
                     const onMouseUp = () => {
                         document.removeEventListener('mousemove', onMouseMove)
                         document.removeEventListener('mouseup', onMouseUp)
+                        thisVar.saveGeometry()
                     }
 
                     document.addEventListener('mousemove', onMouseMove)
@@ -398,26 +407,6 @@ export class CmdBtnService {
         this.app.component('tabs', Tabs)
         .component('tab', Tab)
         .mount('#app');
-
-        console.log('✓ Vue app.mount() called')
-        setTimeout(() => {
-            const headerEl = document.getElementById('app-parent-header')
-            const finalAppEl = document.getElementById('app')
-            const finalAppParentEl = document.getElementById('app-parent')
-            console.log('✓ After Vue mount:')
-            console.log('#app element:', !!finalAppEl)
-            if (finalAppEl) console.log('#app innerHTML length:', finalAppEl.innerHTML.length)
-            console.log('#app-parent-header element:', !!headerEl)
-            console.log('#app-parent element:', !!finalAppParentEl)
-            if (finalAppParentEl) {
-                const style = window.getComputedStyle(finalAppParentEl)
-                console.log('display:', style.display)
-                console.log('visibility:', style.visibility)
-                console.log('opacity:', style.opacity)
-                console.log('width:', style.width)
-                console.log('height:', style.height)
-            }
-        }, 500)
 
         dragElement(document.getElementById("app-parent"));
 
@@ -465,6 +454,7 @@ export class CmdBtnService {
             function closeDragElement() {
                 document.onmouseup = null;
                 document.onmousemove = null;
+                thisVar.saveGeometry();
             }
         }
     }
@@ -500,6 +490,70 @@ export class CmdBtnService {
     
     addTab (tab: any) {
         this.tabs.push(tab)
+    }
+
+    removeTab (tab: any) {
+        const index = this.tabs.indexOf(tab)
+        if (index >= 0) {
+            this.tabs.splice(index, 1)
+        }
+    }
+
+    show () {
+        if (this.div) {
+            this.div.style.display = ''
+        }
+        this.visible = true
+    }
+
+    hide () {
+        if (this.div) {
+            this.div.style.display = 'none'
+        }
+        this.visible = false
+    }
+
+    toggle () {
+        if (this.visible) {
+            this.hide()
+        } else {
+            this.show()
+        }
+    }
+
+    private get pluginStore (): any {
+        if (!this.config.store || !this.config.store.quickCmdBtnPlugin) {
+            return null
+        }
+        return this.config.store.quickCmdBtnPlugin
+    }
+
+    private saveGeometry () {
+        const store = this.pluginStore
+        if (!this.div || !store) {
+            return
+        }
+        store.panel = {
+            top: this.div.offsetTop,
+            left: this.div.offsetLeft,
+            width: this.div.offsetWidth,
+            height: this.div.offsetHeight,
+        }
+        this.config.save()
+    }
+
+    private restoreGeometry () {
+        const store = this.pluginStore
+        const panel = store && store.panel
+        if (!this.div || !panel) {
+            return
+        }
+        this.div.style.top = panel.top + 'px'
+        this.div.style.left = panel.left + 'px'
+        this.div.style.right = 'auto'
+        this.div.style.width = panel.width + 'px'
+        this.div.style.height = panel.height + 'px'
+        this.div.style.maxHeight = panel.height + 'px'
     }
 
     private cleanup() {

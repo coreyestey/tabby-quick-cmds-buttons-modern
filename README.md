@@ -14,8 +14,25 @@ This fork updates the original plugin UI so it follows Tabby's active theme inst
 - Compact minimize / restore behavior
 - Add, edit and delete Quick Commands from the panel
 - **Edit first** mode to insert a resolved command without immediately pressing Enter
-- Draggable and resizable panel
+- Draggable and resizable panel that remembers its position and size
+- Show / hide the panel with a configurable hotkey or the terminal context menu
 - Light, dark and custom Tabby theme support
+
+## Showing and hiding the panel
+
+Closing the panel with the **✕** button hides it; it does not have to be
+rebuilt by restarting Tabby. Bring it back with either:
+
+- The **Show/hide QuickCmdBtn** hotkey (set a key binding under
+  Settings → Hotkeys), or
+- The **Toggle Quick Commands panel** item in a terminal's right-click menu.
+
+## Auto commands
+
+A Quick Command placed in a group named `auto` is run automatically whenever
+its name appears in the terminal output of the focused tab. Use this
+sparingly: every line of output is scanned for the command names in the
+`auto` group.
 
 ## Requirement
 
