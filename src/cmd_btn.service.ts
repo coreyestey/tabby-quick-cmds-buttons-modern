@@ -75,7 +75,7 @@ export class CmdBtnService {
                 </div>
 
                 <div v-show="isTabVisible===false && !minimized" :class="{'use-fixed-theme': !isUseSystemTheme}" class="quick-cmd-content quick-cmd-command-list">
-                    <button @click="sendCmd(cmd)" @contextmenu="openCmdContextMenu($event, cmd)" v-for="cmd in cmds" :key="cmd.name" :title="(cmd.description || cmd.text || '') + ' | Right-click to edit/delete'" class="btn btn-sm btn-secondary quick-cmd-command-button">
+                    <button @click="sendCmd(cmd)" @contextmenu="openCmdContextMenu($event, cmd)" v-for="(cmd, cmdIndex) in cmds" :key="cmdIndex" :title="(cmd.description || cmd.text || '') + ' | Right-click to edit/delete'" class="btn btn-sm btn-secondary quick-cmd-command-button">
                         {{ cmd.name }}
                     </button>
                 </div>
@@ -83,7 +83,7 @@ export class CmdBtnService {
                     <tabs ref="cmdTabs" :options="{ useUrlFragment: false }" >
                         <tab v-bind:name="cmdGroup" v-for="(cmds, cmdGroup) in tabToCmds" :key="cmdGroup">
                             <div class="quick-cmd-command-list">
-                                <button @click="sendCmd(cmd)" @contextmenu="openCmdContextMenu($event, cmd)" v-for="cmd in cmds" :key="cmd.name" :title="(cmd.description || cmd.text || '') + ' | Right-click to edit/delete'" class="btn btn-sm btn-secondary quick-cmd-command-button">
+                                <button @click="sendCmd(cmd)" @contextmenu="openCmdContextMenu($event, cmd)" v-for="(cmd, cmdIndex) in cmds" :key="cmdGroup + '-' + cmdIndex" :title="(cmd.description || cmd.text || '') + ' | Right-click to edit/delete'" class="btn btn-sm btn-secondary quick-cmd-command-button">
                                     {{ cmd.name }}
                                 </button>
                             </div>
@@ -208,6 +208,7 @@ export class CmdBtnService {
                     cmds: this.getCmds(),
                     showDialog: false,
                     editingExistingCommand: false,
+                    editingCmdRef: null,
                     showParameterDialog: false,
                     parameterFields: [],
                     pendingCmd: null,
@@ -297,12 +298,14 @@ export class CmdBtnService {
                         appendCR: true,
                     }
                     this.editingExistingCommand = false
+                    this.editingCmdRef = null
                     this.showDialog = true
                     this.showContextMenu = false
                 },
                 closeDialog() {
                     this.showDialog = false
                     this.editingExistingCommand = false
+                    this.editingCmdRef = null
                 },
                 saveCommand() {
                     if (!this.newCmd.name || !this.newCmd.text) {
@@ -310,24 +313,23 @@ export class CmdBtnService {
                         return
                     }
                     const cmds = thisVar.ensureQcCmds()
-                    const existingIndex = cmds.findIndex(c => c.name === this.newCmd.name)
-                    if (existingIndex >= 0) {
-                        cmds[existingIndex] = {
-                            ...cmds[existingIndex],
-                            name: this.newCmd.name,
-                            text: this.newCmd.text,
-                            description: this.newCmd.description || '',
-                            group: this.newCmd.group || 'default',
-                            appendCR: this.newCmd.appendCR,
-                        }
+                    const values = {
+                        name: this.newCmd.name,
+                        text: this.newCmd.text,
+                        description: this.newCmd.description || '',
+                        group: this.newCmd.group || 'default',
+                        appendCR: this.newCmd.appendCR,
+                    }
+                    // When editing, update the exact command object being edited
+                    // (tracked by reference) so renaming it works and commands
+                    // that share a name are not confused for one another.
+                    const editIndex = this.editingExistingCommand && this.editingCmdRef
+                        ? cmds.indexOf(this.editingCmdRef)
+                        : -1
+                    if (editIndex >= 0) {
+                        cmds[editIndex] = { ...cmds[editIndex], ...values }
                     } else {
-                        cmds.push({
-                            name: this.newCmd.name,
-                            text: this.newCmd.text,
-                            description: this.newCmd.description || '',
-                            group: this.newCmd.group || 'default',
-                            appendCR: this.newCmd.appendCR,
-                        })
+                        cmds.push(values)
                     }
                     thisVar.config.save()
                     this.closeDialog()
@@ -342,6 +344,7 @@ export class CmdBtnService {
                 editCommand(cmd) {
                     this.newCmd = { ...cmd }
                     this.editingExistingCommand = true
+                    this.editingCmdRef = cmd
                     this.showContextMenu = false
                     this.showDialog = true
                 },
